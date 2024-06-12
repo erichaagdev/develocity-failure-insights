@@ -5,17 +5,16 @@ plugins {
     alias(libs.plugins.application)
 }
 
-group = "com.gradle.develocity"
+group = "dev.erichaag"
 version = "0.0.1"
 
 dependencies {
-    implementation("com.jakewharton.picnic:picnic:0.7.0")
     implementation("org.apache.commons:commons-math3:3.6.1")
 }
 
 application {
     applicationName = "develocity-failure-insights"
-    mainClass = "com.gradle.develocity.Main"
+    mainClass = "dev.erichaag.develocity.Main"
     executableDir = ""
 }
 

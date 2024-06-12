@@ -1,7 +1,7 @@
-package com.gradle.develocity.core;
+package dev.erichaag.develocity.core;
 
-import com.gradle.develocity.core.IncidentTracker.BuildView;
-import com.gradle.develocity.api.BuildAttributesValue;
+import dev.erichaag.develocity.api.BuildAttributesValue;
+import dev.erichaag.develocity.core.IncidentTracker.BuildView;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

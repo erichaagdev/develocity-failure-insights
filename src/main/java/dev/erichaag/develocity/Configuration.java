@@ -1,4 +1,4 @@
-package com.gradle.develocity;
+package dev.erichaag.develocity;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,7 +31,8 @@ final class Configuration {
         return new ConfigurationProperties(
                 URI.create(properties.getProperty("serverUrl")),
                 LocalDateTime.parse(properties.getProperty("since"), formatter).atZone(systemDefault()),
-                getOrDefault("maxBuildsPerRequest", it -> parseInt(properties.getProperty(it)), defaultMaxBuildsPerRequest)
+                getOrDefault("maxBuildsPerRequest", it -> parseInt(properties.getProperty(it)), defaultMaxBuildsPerRequest),
+                getOrDefault("excludeAbovePercentile", it -> parseInt(properties.getProperty(it)), null)
         );
     }
 
@@ -46,7 +47,11 @@ final class Configuration {
         }
     }
 
-    record ConfigurationProperties(URI serverUrl, ZonedDateTime since, int maxBuildsPerRequest) {
+    record ConfigurationProperties(
+            URI serverUrl,
+            ZonedDateTime since,
+            int maxBuildsPerRequest,
+            Integer excludeAbovePercentile) {
     }
 
 }

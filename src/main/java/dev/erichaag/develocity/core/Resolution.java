@@ -1,4 +1,4 @@
-package com.gradle.develocity.core;
+package dev.erichaag.develocity.core;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;

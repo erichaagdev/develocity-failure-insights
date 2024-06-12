@@ -1,4 +1,4 @@
-package com.gradle.develocity.api;
+package dev.erichaag.develocity.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -13,15 +13,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
 
-public final class DevelocityClient {
+public final class HttpClientDevelocityClient implements DevelocityClient {
 
     private final URI serverUrl;
     private final String accessKey;
@@ -30,27 +30,25 @@ public final class DevelocityClient {
 
     private static final int maxRetries = 5;
 
-    public DevelocityClient(URI serverUrl) {
+    public HttpClientDevelocityClient(URI serverUrl) {
         this.serverUrl = serverUrl;
         this.accessKey = AccessKeyProvider.lookupAccessKey(serverUrl).orElse(null);
         this.httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
         this.objectMapper = new JsonMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public Build getBuild(String id, Collection<BuildModel> buildModels) {
-        final var response = sendRequest("/api/builds/" + id, null, false, null, buildModels, null);
-        return handleResponse(response, new TypeReference<>() {
-        });
+    public Build getBuild(String id, BuildModel... buildModels) {
+        final var response = sendRequest("/api/builds/" + id, null, false, null, null, Set.of(buildModels));
+        return Build.from(handleResponse(response, new TypeReference<>() {}));
     }
 
-    public List<Build> getBuilds(String query, Integer maxBuilds, Collection<BuildModel> buildModels, String fromBuild) {
-        final var response = sendRequest("/api/builds", query, true, maxBuilds, buildModels, fromBuild);
-        return handleResponse(response, new TypeReference<>() {
-        });
+    public List<Build> getBuilds(String query, Integer maxBuilds, String fromBuild, BuildModel... buildModels) {
+        final var response = sendRequest("/api/builds", query, true, maxBuilds, fromBuild, Set.of(buildModels));
+        return handleResponse(response, new TypeReference<List<ApiBuild>>() {}).stream().map(Build::from).toList();
     }
 
-    private HttpResponse<byte[]> sendRequest(String path, String query, Boolean reverse, Integer maxBuilds, Collection<BuildModel> buildModels, String fromBuild) {
-        final var request = buildRequest(path, query, reverse, maxBuilds, buildModels, fromBuild);
+    private HttpResponse<byte[]> sendRequest(String path, String query, Boolean reverse, Integer maxBuilds, String fromBuild, Set<BuildModel> buildModels) {
+        final var request = buildRequest(path, query, reverse, maxBuilds, fromBuild, buildModels);
         return retry(() -> sendRequest(request, ofByteArray()));
     }
 
@@ -62,13 +60,13 @@ public final class DevelocityClient {
         }
     }
 
-    private HttpRequest buildRequest(String path, String query, Boolean reverse, Integer maxBuilds, Collection<BuildModel> buildModels, String fromBuild) {
-        final var request = HttpRequest.newBuilder().uri(buildRequestUri(path, query, reverse, maxBuilds, buildModels, fromBuild));
+    private HttpRequest buildRequest(String path, String query, Boolean reverse, Integer maxBuilds, String fromBuild, Set<BuildModel> buildModels) {
+        final var request = HttpRequest.newBuilder().uri(buildRequestUri(path, query, reverse, maxBuilds, fromBuild, buildModels));
         if (accessKey != null) request.header("Authorization", "Bearer " + accessKey);
         return request.build();
     }
 
-    private URI buildRequestUri(String path, String query, Boolean reverse, Integer maxBuilds, Collection<BuildModel> buildModels, String fromBuild) {
+    private URI buildRequestUri(String path, String query, Boolean reverse, Integer maxBuilds, String fromBuild, Set<BuildModel> buildModels) {
         try {
             final var parameters = new HashSet<String>();
             if (maxBuilds != null) parameters.add("maxBuilds=" + maxBuilds);

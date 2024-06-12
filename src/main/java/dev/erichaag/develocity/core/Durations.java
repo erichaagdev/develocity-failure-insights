@@ -1,10 +1,10 @@
-package com.gradle.develocity.core;
+package dev.erichaag.develocity.core;
 
 import java.time.Duration;
 
-final class Durations {
+public final class Durations {
 
-    static String format(Duration duration) {
+    public static String format(Duration duration) {
         if (duration.abs().getSeconds() == 0) {
             return "0s";
         }

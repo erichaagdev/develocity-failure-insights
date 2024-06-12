@@ -1,4 +1,4 @@
-package com.gradle.develocity.api;
+package dev.erichaag.develocity.api;
 
 public enum BuildModel {
 

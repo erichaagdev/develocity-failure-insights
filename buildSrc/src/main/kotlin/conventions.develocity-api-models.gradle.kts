@@ -39,11 +39,16 @@ dependencies {
     implementation(libs.findLibrary("jakarta-annotation-api").get())
 }
 
+val postProcessDevelocityApiSpecification by tasks.registering(PostProcessDevelocityApiSpecification::class) {
+    inputSpecification = resolvableDevelocityApiSpecification
+    outputSpecification = layout.buildDirectory.file("$name/openapi.yaml")
+}
+
 openApiGenerate {
     generatorName = "java"
-    inputSpec = resolvableDevelocityApiSpecification.map { it.singleFile.absolutePath }
+    inputSpec = postProcessDevelocityApiSpecification.flatMap { it.outputSpecification.asFile }.map { it.toString() }
     outputDir = layout.buildDirectory.dir("generated/openapi").map { it.asFile.absolutePath }
-    modelPackage = provider { "$group.api" }
+    modelPackage = provider { "$group.develocity.api" }
     apiPackage = provider { "$group.unused.api" }
     invokerPackage = provider { "$group.unused.invoker" }
     cleanupOutput = true
@@ -64,12 +69,16 @@ openApiGenerate {
 val generateDevelocityApiModels by tasks.registering(Sync::class) {
     from(tasks.openApiGenerate) {
         includeEmptyDirs = false
-        include("src/main/java/com/gradle/develocity/api/*")
+        include("src/main/java/dev/erichaag/develocity/api/*")
         eachFile {
             path = path.removePrefix("src/main/java")
         }
     }
     into(layout.buildDirectory.dir(name))
+}
+
+val generate by tasks.registering {
+    dependsOn(generateDevelocityApiModels)
 }
 
 sourceSets {
@@ -82,4 +91,22 @@ sourceSets {
 
 abstract class DevelocityApiExtension {
     abstract val version: Property<String>
+}
+
+abstract class PostProcessDevelocityApiSpecification : DefaultTask() {
+
+    @get:InputFiles
+    abstract val inputSpecification: Property<FileCollection>
+
+    @get:OutputFile
+    abstract val outputSpecification: RegularFileProperty
+
+    @TaskAction
+    fun action() {
+        inputSpecification.get().singleFile.readText()
+            .replace(" Build:", " ApiBuild:")
+            .replace("Build'", "ApiBuild'")
+            .run { outputSpecification.get().asFile.writeText(this) }
+    }
+
 }
